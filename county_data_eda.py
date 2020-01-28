@@ -9,41 +9,80 @@ from pandas_summary import DataFrameSummary
 
 
 def main():
-    df = pd.read_csv('CountyData.tsv', sep='\t')
-    dfs = DataFrameSummary(df)
+    df = load_and_process_data()
 
     for col in df.columns:
         print(df[col].describe())
 
-    sns.pairplot(df)
-    plt.tight_layout()
-    plt.savefig('county_data_pair.png')
-
+    dfs = DataFrameSummary(df)
     print(dfs.columns_types)
     print(dfs.columns_stats)
+
+    sns.pairplot(df.drop(['id', 'County'], axis=1))
+    plt.tight_layout()
+    plt.savefig('county_data_pair.png')
+    plt.close()
+
+    make_upshot_figure(df)
+
+
+def load_and_process_data():
+    df = pd.read_csv(
+        'CountyData.tsv',
+        dtype={'id': str},
+        sep='\t',
+        na_values=['No Data', '#N/A']
+    )
+    df.dropna(inplace=True)
+    df.sort_values('rank', inplace=True)
+    df['id'] = df['id'].str.zfill(5)
+    return df
+
+
+def make_upshot_figure(df):
+    """
+    Replicates the figure from:
+        https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
+    """
+    discrete_rank = pd.qcut(df['rank'], 7, labels=False).astype(str)
 
     with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
         counties = json.load(response)
 
-    print(counties['features'][0])
-
-    df_2 = pd.read_csv(
-        "https://raw.githubusercontent.com/plotly/datasets/master/fips-unemp-16.csv",
-        dtype={"fips": str}
-    )
-    fig = px.choropleth_mapbox(
+    fig = px.choropleth(
         df,
         geojson=counties,
         locations='id',
-        color='rank',
-        color_continuous_scale="Viridis",
-        # range_color=(0, 12),
-        mapbox_style="carto-positron",
-        zoom=3, center={"lat": 37.0902, "lon": -95.7129},
-        opacity=0.5,
-        labels={'unemp': 'unemployment rate'}
+        color=discrete_rank,
+        hover_name='County',
+        hover_data=['rank', 'income', 'education', 'unemployment', 'disability', 'life', 'obesity'],
+        color_discrete_map={
+            '0': "#367B7F",
+            '1': "#76A5A8",
+            '2': "#A6C5C6",
+            '3': "#EBE3D7",
+            '4': "#F9C79E",
+            '5': "#F5A361",
+            '6': "#F28124"
+        },
+        center={"lat": 37.0902, "lon": -95.7129},
+        labels={
+            'rank': 'Overall Rank',
+            'income': 'Median Income',
+            'education': 'College Education',
+            'unemployment': 'Unemployment',
+            'disability': 'Disability',
+            'life': 'Life Expectancy',
+            'obesity': 'Obesity',
+        }
     )
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+    fig.update_geos(
+        visible=False,
+        scope='usa',
+    )
+    fig.update_layout(
+        margin={"r": 0, "t": 30, "l": 0, "b": 0}
+    )
     fig.show()
 
 
