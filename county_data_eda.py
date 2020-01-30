@@ -18,12 +18,10 @@ def main():
     print(dfs.columns_types)
     print(dfs.columns_stats)
 
-    sns.pairplot(df.drop(['id', 'County'], axis=1))
-    plt.tight_layout()
-    plt.savefig('county_data_pair.png')
-    plt.close()
+    pair_plot(df)
 
     make_upshot_figure(df)
+    make_modified_upshot_figure(df)
 
 
 def load_and_process_data():
@@ -37,6 +35,13 @@ def load_and_process_data():
     df.sort_values('rank', inplace=True)
     df['id'] = df['id'].str.zfill(5)
     return df
+
+
+def pair_plot(df):
+    sns.pairplot(df.drop(['id', 'County'], axis=1), plot_kws={'facecolor': 'None', 'edgecolor': sns.xkcd_rgb["denim blue"]})
+    plt.tight_layout()
+    plt.savefig('county_data_pair.png')
+    plt.close()
 
 
 def make_upshot_figure(df):
@@ -65,7 +70,6 @@ def make_upshot_figure(df):
             '5': "#F5A361",
             '6': "#F28124"
         },
-        center={"lat": 37.0902, "lon": -95.7129},
         labels={
             'rank': 'Overall Rank',
             'income': 'Median Income',
@@ -79,6 +83,49 @@ def make_upshot_figure(df):
     fig.update_geos(
         visible=False,
         scope='usa',
+    )
+    fig.update_traces(
+        marker_line_color="white"
+    )
+    fig.update_layout(
+        margin={"r": 0, "t": 30, "l": 0, "b": 0}
+    )
+    fig.show()
+
+
+def make_modified_upshot_figure(df):
+    """
+    Replicates the figure from:
+        https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
+    """
+    with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
+        counties = json.load(response)
+
+    fig = px.choropleth(
+        df,
+        geojson=counties,
+        locations='id',
+        color='rank',
+        hover_name='County',
+        hover_data=['rank', 'income', 'education', 'unemployment', 'disability', 'life', 'obesity'],
+        color_continuous_scale='Greens',
+        range_color=[-500, df['rank'].max()],
+        labels={
+            'rank': 'Quality of Living Rank',
+            'income': 'Median Income',
+            'education': 'College Education',
+            'unemployment': 'Unemployment',
+            'disability': 'Disability',
+            'life': 'Life Expectancy',
+            'obesity': 'Obesity',
+        }
+    )
+    fig.update_geos(
+        visible=False,
+        scope='usa',
+    )
+    fig.update_traces(
+        marker_line_color="white"
     )
     fig.update_layout(
         margin={"r": 0, "t": 30, "l": 0, "b": 0}
