@@ -35,7 +35,6 @@ def load_and_process_data():
     df.sort_values('rank', inplace=True)
     df['id'] = df['id'].str.zfill(5)
     df.rename({'id': 'FIPS'}, axis=1, inplace=True)
-    print(df.columns)
 
     df2 = pd.read_csv('centroids.csv', na_values=['-'])
 
@@ -62,7 +61,7 @@ def make_upshot_figure(df):
     Replicates the figure from:
         https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
     """
-    df['Quality of Life'] = pd.qcut(df['rank'], 7, labels=False).astype(str)
+    df['Quality of Life'] = pd.qcut(df['rank'], 7, labels=False)
 
     with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
         counties = json.load(response)
@@ -74,15 +73,15 @@ def make_upshot_figure(df):
         color='Quality of Life',
         hover_name='County',
         hover_data=['rank', 'income', 'education', 'unemployment', 'disability', 'life', 'obesity'],
-        color_discrete_map={
-            '0': "#367B7F",
-            '1': "#76A5A8",
-            '2': "#A6C5C6",
-            '3': "#EBE3D7",
-            '4': "#F9C79E",
-            '5': "#F5A361",
-            '6': "#F28124"
-        },
+        color_continuous_scale=[
+            (0/7, "#367B7F"), (1/7, "#367B7F"),
+            (1/7, "#76A5A8"), (2/7, "#76A5A8"),
+            (2/7, "#A6C5C6"), (3/7, "#A6C5C6"),
+            (3/7, "#EBE3D7"), (4/7, "#EBE3D7"),
+            (4/7, "#F9C79E"), (5/7, "#F9C79E"),
+            (5/7, "#F5A361"), (6/7, "#F5A361"),
+            (6/7, "#F28124"), (7/7, "#F28124"),
+        ],
         labels={
             'rank': 'Overall Rank',
             'income': 'Median Income',
@@ -101,7 +100,11 @@ def make_upshot_figure(df):
         marker_line_color="white"
     )
     fig.update_layout(
-        margin={"r": 0, "t": 30, "l": 0, "b": 0}
+        margin={"r": 0, "t": 30, "l": 0, "b": 0},
+        coloraxis_colorbar=dict(
+            tickvals=[0.4, 5.6],
+            ticktext=["Worse", "Better"],
+        )
     )
     fig.show()
 
@@ -122,9 +125,9 @@ def make_modified_upshot_figure(df):
         hover_name='County',
         hover_data=['rank', 'income', 'education', 'unemployment', 'disability', 'life', 'obesity'],
         color_continuous_scale='Greens',
-        range_color=[-1000, df['rank'].max()],
+        range_color=[-1500, df['rank'].max()],
         labels={
-            'rank': 'Quality of Life Rank',
+            'rank': 'Quality of Life (Rank)',
             'income': 'Median Income',
             'education': 'College Education',
             'unemployment': 'Unemployment',
@@ -141,7 +144,11 @@ def make_modified_upshot_figure(df):
         marker_line_color="white"
     )
     fig.update_layout(
-        margin={"r": 0, "t": 30, "l": 0, "b": 0}
+        margin={"r": 0, "t": 30, "l": 0, "b": 0},
+        coloraxis_colorbar=dict(
+            tickvals=[-1250, 2750],
+            ticktext=["Worse", "Better"],
+        )
     )
     fig.show()
 
