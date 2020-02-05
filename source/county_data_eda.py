@@ -5,18 +5,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
-from pandas_summary import DataFrameSummary
 
 
 def main():
     df = load_and_process_data()
-
-    # for col in df.columns:
-    #     print(df[col].describe())
-
-    # dfs = DataFrameSummary(df)
-    # print(dfs.columns_types)
-    # print(dfs.columns_stats)
 
     pair_plot(df)
 
@@ -26,7 +18,7 @@ def main():
 
 def load_and_process_data():
     df = pd.read_csv(
-        'CountyData.tsv',
+        '../data/CountyData.tsv',
         dtype={'id': str},
         sep='\t',
         na_values=['No Data', '#N/A']
@@ -36,10 +28,18 @@ def load_and_process_data():
     df['id'] = df['id'].str.zfill(5)
     df.rename({'id': 'FIPS'}, axis=1, inplace=True)
 
-    df2 = pd.read_csv('centroids.csv', na_values=['-'])
+    df2 = pd.read_csv('../data/centroids.csv', na_values=['-'])
 
     # Clean up and type cast a few columns
-    for col in ['Population (2010)', 'Land Area (km)', 'Land Area(mi)', 'Water Area (km)', 'Water Area (mi)', 'Total Area (km)', 'Total Area (mi)']:
+    for col in [
+        'Population (2010)',
+        'Land Area (km)',
+        'Land Area(mi)',
+        'Water Area (km)',
+        'Water Area (mi)',
+        'Total Area (km)',
+        'Total Area (mi)'
+    ]:
         df2[col] = df2[col].str.replace(',', '').astype(float)
 
     df2['FIPS'] = df2['FIPS'].astype(str).str.zfill(5)
@@ -50,9 +50,16 @@ def load_and_process_data():
 
 
 def pair_plot(df):
-    sns.pairplot(df.drop(['FIPS', 'County'], axis=1), plot_kws={'facecolor': 'None', 'edgecolor': sns.xkcd_rgb["denim blue"]})
+    sns.pairplot(
+        df.drop(['FIPS', 'County'], axis=1),
+        plot_kws={
+            'facecolor': 'None',
+            'edgecolor': sns.xkcd_rgb["denim blue"],
+        },
+        diag_kws={'color': sns.xkcd_rgb["denim blue"]},
+    )
     plt.tight_layout()
-    plt.savefig('county_data_pair.png')
+    plt.savefig('../output/county_data_pair.png')
     plt.close()
 
 
@@ -74,13 +81,13 @@ def make_upshot_figure(df):
         hover_name='County',
         hover_data=['rank', 'income', 'education', 'unemployment', 'disability', 'life', 'obesity'],
         color_continuous_scale=[
-            (0/7, "#367B7F"), (1/7, "#367B7F"),
-            (1/7, "#76A5A8"), (2/7, "#76A5A8"),
-            (2/7, "#A6C5C6"), (3/7, "#A6C5C6"),
-            (3/7, "#EBE3D7"), (4/7, "#EBE3D7"),
-            (4/7, "#F9C79E"), (5/7, "#F9C79E"),
-            (5/7, "#F5A361"), (6/7, "#F5A361"),
-            (6/7, "#F28124"), (7/7, "#F28124"),
+            (0 / 7, "#367B7F"), (1 / 7, "#367B7F"),
+            (1 / 7, "#76A5A8"), (2 / 7, "#76A5A8"),
+            (2 / 7, "#A6C5C6"), (3 / 7, "#A6C5C6"),
+            (3 / 7, "#EBE3D7"), (4 / 7, "#EBE3D7"),
+            (4 / 7, "#F9C79E"), (5 / 7, "#F9C79E"),
+            (5 / 7, "#F5A361"), (6 / 7, "#F5A361"),
+            (6 / 7, "#F28124"), (7 / 7, "#F28124"),
         ],
         labels={
             'rank': 'Overall Rank',
