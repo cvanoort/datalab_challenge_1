@@ -10,15 +10,18 @@ import seaborn as sns
 def main():
     df = load_and_process_data()
 
-    pair_plot(df)
+    # pair_plot(df)
+    #
+    # make_upshot_figure(df)
+    # make_modified_upshot_figure(df)
 
-    make_upshot_figure(df)
-    make_modified_upshot_figure(df)
+    edge_list = load_edge_list()
+    print(edge_list)
 
 
 def load_and_process_data():
     df = pd.read_csv(
-        '../data/CountyData.tsv',
+        '../data/county_data.tsv',
         dtype={'id': str},
         sep='\t',
         na_values=['No Data', '#N/A']
@@ -47,6 +50,10 @@ def load_and_process_data():
 
     df3 = pd.merge(df, df2, on='FIPS', how='left', left_index=False, right_index=False)
     return df3
+
+
+def load_edge_list():
+    return pd.read_csv('../data/county_edge_list.csv', index_col=0)
 
 
 def pair_plot(df):
