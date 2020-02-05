@@ -10,13 +10,12 @@ import seaborn as sns
 def main():
     df = load_and_process_data()
 
-    # pair_plot(df)
-    #
-    # make_upshot_figure(df)
-    # make_modified_upshot_figure(df)
+    pair_plot(df)
+
+    make_upshot_figure(df)
+    make_modified_upshot_figure(df)
 
     edge_list = load_edge_list()
-    print(edge_list)
 
 
 def load_and_process_data():
@@ -53,7 +52,7 @@ def load_and_process_data():
 
 
 def load_edge_list():
-    return pd.read_csv('../data/county_edge_list.csv', index_col=0)
+    return pd.read_csv('../data/county_edge_list.csv')
 
 
 def pair_plot(df):
