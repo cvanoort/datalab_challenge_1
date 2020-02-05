@@ -1,7 +1,7 @@
 # Data Lab (CSYS 395, Spring 2020) Challenge #1
 - Assigned 2020/01/28
 - Due 2020/02/11
-- Team 4:
+- Team 4 - The Light Monkeys:
   - Emily Beasley
   - Colin Van Oort
   - Anthony Barrows
@@ -14,3 +14,10 @@
  4. Are highly-ranked counties more or less spatially clustered than lower-ranked counties?
  5. Find a different dataset that, coupled with the county data, could help answer other
     interesting questions. Possible themes: social mobility, electric vehicles, social media.
+
+## Solutions
+ 1. See [county_data_eda.load_and_process_data](source/county_data_eda.py).
+ 2.
+ 3. 
+ 4. 
+ 5. 

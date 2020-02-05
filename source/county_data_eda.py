@@ -2,6 +2,7 @@ import json
 from urllib.request import urlopen
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import seaborn as sns
@@ -16,6 +17,7 @@ def main():
     make_modified_upshot_figure(df)
 
     edge_list = load_edge_list()
+    make_neighborhood_rank_divergence_plot(df, edge_list)
 
 
 def load_and_process_data():
@@ -164,6 +166,27 @@ def make_modified_upshot_figure(df):
         )
     )
     fig.show()
+
+
+def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
+    rank_df.sort_values('rank', inplace=True, ascending=True)
+
+    divergences = np.zeros(len(rank_df.index))
+    for i, (county, rank) in enumerate(zip(rank_df['County'], rank_df['rank'])):
+        neighbors = adj_df.loc[adj_df.source == county, 'destination']
+        divergences[i] = (rank - rank_df.loc[rank_df.County.isin(neighbors).values, 'rank']).mean()
+
+    plt.scatter(
+        rank_df['rank'].values, divergences,
+        facecolor='None',
+        edgecolor=sns.xkcd_rgb["denim blue"],
+        linewidth=2,
+    )
+    plt.title('Mean Neighborhood Rank Divergence')
+    plt.xlabel('Quality of Life Rank')
+    plt.ylabel('Rank Divergence')
+    plt.tight_layout()
+    plt.savefig('../output/neighborhood_rank_divergence.png')
 
 
 if __name__ == '__main__':
