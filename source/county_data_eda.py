@@ -11,10 +11,10 @@ import seaborn as sns
 def main():
     df = load_and_process_data()
 
-    pair_plot(df)
-
-    make_upshot_figure(df)
-    make_modified_upshot_figure(df)
+    # pair_plot(df)
+    #
+    # make_upshot_figure(df)
+    # make_modified_upshot_figure(df)
 
     edge_list = load_edge_list()
     make_neighborhood_rank_divergence_plot(df, edge_list)
@@ -118,7 +118,7 @@ def make_upshot_figure(df):
         margin={"r": 0, "t": 30, "l": 0, "b": 0},
         coloraxis_colorbar=dict(
             tickvals=[0.4, 5.6],
-            ticktext=["Worse", "Better"],
+            ticktext=["Better", "Worse"],
         )
     )
     fig.show()
@@ -162,7 +162,7 @@ def make_modified_upshot_figure(df):
         margin={"r": 0, "t": 30, "l": 0, "b": 0},
         coloraxis_colorbar=dict(
             tickvals=[-1250, 2750],
-            ticktext=["Worse", "Better"],
+            ticktext=["Better", "Worse"],
         )
     )
     fig.show()
@@ -174,14 +174,37 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     divergences = np.zeros(len(rank_df.index))
     for i, (county, rank) in enumerate(zip(rank_df['County'], rank_df['rank'])):
         neighbors = adj_df.loc[adj_df.source == county, 'destination']
-        divergences[i] = (rank - rank_df.loc[rank_df.County.isin(neighbors).values, 'rank']).mean()
+
+        if len(neighbors) == 0:
+            neighbors = adj_df.loc[adj_df.destination == county, 'source']
+
+        rank_ind = rank_df.County.isin(neighbors).values
+        neighbor_ranks = rank_df.loc[rank_ind, 'rank']
+        divergence = np.abs(rank - neighbor_ranks).mean()
+        divergences[i] = divergence
+
+        if np.isnan(divergence):
+            print(county)
+            print(neighbors)
+            print(neighbor_ranks)
+
+    rank_df['rank_div'] = divergences
 
     plt.scatter(
-        rank_df['rank'].values, divergences,
+        rank_df['rank'].values,
+        rank_df['rank_div'].values,
         facecolor='None',
         edgecolor=sns.xkcd_rgb["denim blue"],
         linewidth=2,
+        label='Data',
     )
+    plt.plot(
+        rank_df['rank'].values,
+        rank_df['rank_div'].rolling(100).mean(),
+        color='darkorange',
+        label='Rolling Mean',
+    )
+    plt.legend()
     plt.title('Mean Neighborhood Rank Divergence')
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Rank Divergence')
