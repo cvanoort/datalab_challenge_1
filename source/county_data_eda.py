@@ -4,17 +4,19 @@ from urllib.request import urlopen
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import plotly
 import plotly.express as px
+import ruptures as rpt
 import seaborn as sns
 
 
 def main():
     df = load_and_process_data()
 
-    # pair_plot(df)
-    #
-    # make_upshot_figure(df)
-    # make_modified_upshot_figure(df)
+    pair_plot(df)
+
+    make_upshot_figure(df)
+    make_modified_upshot_figure(df)
 
     edge_list = load_edge_list()
     make_neighborhood_rank_divergence_plot(df, edge_list)
@@ -121,6 +123,7 @@ def make_upshot_figure(df):
             ticktext=["Better", "Worse"],
         )
     )
+    plotly.offline.plot(fig, filename="../output/upshot_figure.html", auto_open=False)
     fig.show()
 
 
@@ -165,6 +168,7 @@ def make_modified_upshot_figure(df):
             ticktext=["Better", "Worse"],
         )
     )
+    plotly.offline.plot(fig, filename="../output/upshot_figure_restyled.html", auto_open=False)
     fig.show()
 
 
@@ -209,7 +213,58 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Rank Divergence')
     plt.tight_layout()
+    ymin, ymax = plt.gca().get_ylim()
     plt.savefig('../output/neighborhood_rank_divergence.png')
+
+    # Change point detection
+    signal = rank_df['rank_div'].rolling(100).mean().dropna().values
+    bkps = []
+    rpt.display(
+        signal,
+        bkps,
+        rpt.Pelt(model="rbf").fit(signal).predict(pen=100),
+        figsize=(10, 6),
+    )
+    plt.ylim(ymin, ymax)
+    plt.gca().get_lines()[0].set_color("darkorange")
+    plt.title('Pelt Change Point Detection')
+    plt.xlabel('Quality of Life Rank')
+    plt.ylabel('Local Rank Divergence')
+    plt.tight_layout()
+    plt.savefig('../output/rank_div_change_point_pelt.png')
+
+    # Change point detection
+    model = "l2"  # "l1", "rbf", "linear", "normal", "ar"
+    rpt.show.display(
+        signal,
+        bkps,
+        rpt.Window(width=1000, model=model).fit(signal).predict(n_bkps=1),
+        figsize=(10, 6),
+    )
+    plt.ylim(ymin, ymax)
+    plt.gca().get_lines()[0].set_color("darkorange")
+    plt.title('Window Change Point Detection')
+    plt.xlabel('Quality of Life Rank')
+    plt.ylabel('Local Rank Divergence')
+    plt.tight_layout()
+    plt.savefig('../output/rank_div_change_point_window.png')
+
+    # Change point detection
+    model = "l2"  # "l1", "rbf", "linear", "normal", "ar"
+    rpt.show.display(
+        signal,
+        bkps,
+        rpt.Binseg(model=model).fit(signal).predict(n_bkps=1),
+        figsize=(10, 6),
+
+    )
+    plt.ylim(ymin, ymax)
+    plt.gca().get_lines()[0].set_color("darkorange")
+    plt.title('Binary Change Point Detection')
+    plt.xlabel('Quality of Life Rank')
+    plt.ylabel('Local Rank Divergence')
+    plt.tight_layout()
+    plt.savefig('../output/rank_div_change_point_binary.png')
 
 
 if __name__ == '__main__':
