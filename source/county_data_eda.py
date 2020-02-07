@@ -51,8 +51,14 @@ def load_and_process_data():
     df2['FIPS'] = df2['FIPS'].astype(str).str.zfill(5)
     df2.drop('County', axis=1, inplace=True)
 
-    df3 = pd.merge(df, df2, on='FIPS', how='left', left_index=False, right_index=False)
-    return df3
+    return pd.merge(
+        df,
+        df2,
+        on='FIPS',
+        how='left',
+        left_index=False,
+        right_index=False,
+    )
 
 
 def load_edge_list():
