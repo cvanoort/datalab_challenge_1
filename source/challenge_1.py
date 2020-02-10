@@ -96,7 +96,7 @@ def pair_plot(df):
     plt.close()
 
 
-def make_upshot_figure(df, renderer=None):
+def make_upshot_figure(df, renderer=None, save=True):
     """
     Replicates the figure from:
         https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
@@ -149,11 +149,14 @@ def make_upshot_figure(df, renderer=None):
             ticktext=['Better', 'Worse'],
         )
     )
-    plotly.offline.plot(fig, filename='../output/upshot_figure.html', auto_open=False)
+
+    if save:
+        plotly.offline.plot(fig, filename='../output/upshot_figure.html', auto_open=False)
+
     fig.show(renderer=renderer)
 
 
-def make_modified_upshot_figure(df, renderer=None):
+def make_modified_upshot_figure(df, renderer=None, save=True):
     """
     Produces a figure similar to:
         https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
@@ -202,7 +205,10 @@ def make_modified_upshot_figure(df, renderer=None):
             ticktext=['Better', 'Worse'],
         )
     )
-    plotly.offline.plot(fig, filename='../output/upshot_figure_restyled.html', auto_open=False)
+
+    if save:
+        plotly.offline.plot(fig, filename='../output/upshot_figure_restyled.html', auto_open=False)
+
     fig.show(renderer=renderer)
 
 
@@ -263,7 +269,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     y_range = y_max - y_min
     plt.plot(
         [ensemble_bkp, ensemble_bkp],
-        [y_min - 0.1 * y_range, divergences.max() + 0.1 * y_range],
+        [y_min - 0.1 * y_range, y_max + 0.1 * y_range],
         'k--',
         label='Estimated Breakpoint'
     )
