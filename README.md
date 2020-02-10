@@ -16,8 +16,8 @@
     interesting questions. Possible themes: social mobility, electric vehicles, social media.
 
 ## Solutions
- 1. See [county_data_eda.load_and_process_data](source/county_data_eda.py#L26) and [county_data_eda.make_upshot_figure](source/county_data_eda.py:L77).
- 2. See [county_data_eda.make_modified_upshot_figure](source/county_data_eda.py#L130)
+ 1. See [county_data_eda.load_and_process_data](source/challenge_1.py#L26) and [county_data_eda.make_upshot_figure](source/county_data_eda.py:L77).
+ 2. See [county_data_eda.make_modified_upshot_figure](source/challenge_1.py#L130)
  3. 
  4. 
  5. 

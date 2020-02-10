@@ -23,6 +23,7 @@ def main():
 
 
 def load_and_process_data():
+    # Load The Upshot data set
     df = pd.read_csv(
         '../data/county_data.tsv',
         dtype={'id': str},
@@ -34,6 +35,7 @@ def load_and_process_data():
     df['id'] = df['id'].str.zfill(5)
     df.rename({'id': 'FIPS'}, axis=1, inplace=True)
 
+    # Load the population data set from Jane
     df2 = pd.read_csv('../data/centroids.csv', na_values=['-'])
 
     # Clean up and type cast a few columns
@@ -51,7 +53,11 @@ def load_and_process_data():
     df2['FIPS'] = df2['FIPS'].astype(str).str.zfill(5)
     df2.drop('County', axis=1, inplace=True)
 
-    return pd.merge(
+    # Load the migration data set we found
+    df3 = pd.read_csv('../data/net_migration.csv', dtype={'FIPS': str})
+
+    # Merge everything together
+    df = pd.merge(
         df,
         df2,
         on='FIPS',
@@ -59,6 +65,18 @@ def load_and_process_data():
         left_index=False,
         right_index=False,
     )
+    df = pd.merge(
+        df,
+        df3,
+        on='FIPS',
+        how='left',
+        left_index=False,
+        right_index=False,
+    )
+    print(df.columns)
+    print(df.head())
+    print(len(df.index))
+    return df
 
 
 def load_edge_list():
@@ -70,9 +88,9 @@ def pair_plot(df):
         df.drop(['FIPS', 'County'], axis=1),
         plot_kws={
             'facecolor': 'None',
-            'edgecolor': sns.xkcd_rgb["denim blue"],
+            'edgecolor': sns.xkcd_rgb['denim blue'],
         },
-        diag_kws={'color': sns.xkcd_rgb["denim blue"]},
+        diag_kws={'color': sns.xkcd_rgb['denim blue']},
     )
     plt.tight_layout()
     plt.savefig('../output/county_data_pair.png')
@@ -97,13 +115,13 @@ def make_upshot_figure(df):
         hover_name='County',
         hover_data=['rank', 'income', 'education', 'unemployment', 'disability', 'life', 'obesity'],
         color_continuous_scale=[
-            (0 / 7, "#367B7F"), (1 / 7, "#367B7F"),
-            (1 / 7, "#76A5A8"), (2 / 7, "#76A5A8"),
-            (2 / 7, "#A6C5C6"), (3 / 7, "#A6C5C6"),
-            (3 / 7, "#EBE3D7"), (4 / 7, "#EBE3D7"),
-            (4 / 7, "#F9C79E"), (5 / 7, "#F9C79E"),
-            (5 / 7, "#F5A361"), (6 / 7, "#F5A361"),
-            (6 / 7, "#F28124"), (7 / 7, "#F28124"),
+            (0 / 7, '#367B7F'), (1 / 7, '#367B7F'),
+            (1 / 7, '#76A5A8'), (2 / 7, '#76A5A8'),
+            (2 / 7, '#A6C5C6'), (3 / 7, '#A6C5C6'),
+            (3 / 7, '#EBE3D7'), (4 / 7, '#EBE3D7'),
+            (4 / 7, '#F9C79E'), (5 / 7, '#F9C79E'),
+            (5 / 7, '#F5A361'), (6 / 7, '#F5A361'),
+            (6 / 7, '#F28124'), (7 / 7, '#F28124'),
         ],
         labels={
             'rank': 'Overall Rank',
@@ -120,16 +138,16 @@ def make_upshot_figure(df):
         scope='usa',
     )
     fig.update_traces(
-        marker_line_color="white"
+        marker_line_color='white'
     )
     fig.update_layout(
-        margin={"r": 0, "t": 30, "l": 0, "b": 0},
+        margin={'r': 0, 't': 30, 'l': 0, 'b': 0},
         coloraxis_colorbar=dict(
             tickvals=[0.4, 5.6],
-            ticktext=["Better", "Worse"],
+            ticktext=['Better', 'Worse'],
         )
     )
-    plotly.offline.plot(fig, filename="../output/upshot_figure.html", auto_open=False)
+    plotly.offline.plot(fig, filename='../output/upshot_figure.html', auto_open=False)
     fig.show()
 
 
@@ -165,16 +183,16 @@ def make_modified_upshot_figure(df):
         scope='usa',
     )
     fig.update_traces(
-        marker_line_color="white"
+        marker_line_color='white'
     )
     fig.update_layout(
-        margin={"r": 0, "t": 30, "l": 0, "b": 0},
+        margin={'r': 0, 't': 30, 'l': 0, 'b': 0},
         coloraxis_colorbar=dict(
             tickvals=[-1250, 2750],
-            ticktext=["Better", "Worse"],
+            ticktext=['Better', 'Worse'],
         )
     )
-    plotly.offline.plot(fig, filename="../output/upshot_figure_restyled.html", auto_open=False)
+    plotly.offline.plot(fig, filename='../output/upshot_figure_restyled.html', auto_open=False)
     fig.show()
 
 
@@ -200,11 +218,26 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
 
     rank_df['rank_div'] = divergences
 
+    # Change point detection
+    signal = rank_df['rank_div'].rolling(100).mean().dropna().values
+    # model = {'l1', 'l2', 'rbf', 'linear', 'normal', 'ar'}
+    pelt_bkps = rpt.Pelt(model='rbf').fit(signal).predict(pen=100)
+    window_bkps = rpt.Window(width=1000, model='l2').fit(signal).predict(n_bkps=1)
+    bin_bkps = rpt.Binseg(model='l2').fit(signal).predict(n_bkps=1)
+    ensemble_bkp = np.mean([*pelt_bkps[:-1], *window_bkps[:-1], *bin_bkps[:-1]])
+
+    print(
+        'Identified Breakpoints:'
+        f'\n\tPelt Breakpoints:    {pelt_bkps[:-1]}'
+        f'\n\tWindow Breakpoints:  {window_bkps[:-1]}'
+        f'\n\tBinary Breakpoints:  {bin_bkps[:-1]}'
+        f'\n\tEnsemble Breakpoint: {ensemble_bkp}')
+
     plt.scatter(
         rank_df['rank'].values,
         rank_df['rank_div'].values,
         facecolor='None',
-        edgecolor=sns.xkcd_rgb["denim blue"],
+        edgecolor=sns.xkcd_rgb['denim blue'],
         linewidth=2,
         label='Data',
     )
@@ -213,6 +246,15 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
         rank_df['rank_div'].rolling(100).mean(),
         color='darkorange',
         label='Rolling Mean',
+    )
+
+    y_min, y_max = divergences.min(), divergences.max()
+    y_range = y_max - y_min
+    plt.plot(
+        [ensemble_bkp, ensemble_bkp],
+        [y_min - 0.1 * y_range, divergences.max() + 0.1 * y_range],
+        'k--',
+        label='Estimated Breakpoint'
     )
     plt.legend()
     plt.title('Mean Neighborhood Rank Divergence')
@@ -223,50 +265,45 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     figsize = plt.gcf().get_size_inches()
     plt.savefig('../output/neighborhood_rank_divergence.png')
 
-    # Change point detection
-    signal = rank_df['rank_div'].rolling(100).mean().dropna().values
+    # Visualize change points
     bkps = []
     rpt.display(
         signal,
         bkps,
-        rpt.Pelt(model="rbf").fit(signal).predict(pen=100),
+        pelt_bkps,
         figsize=figsize,
     )
     plt.ylim(ymin, ymax)
-    plt.gca().get_lines()[0].set_color("darkorange")
+    plt.gca().get_lines()[0].set_color('darkorange')
     plt.title('Pelt Change Point Detection')
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_pelt.png')
 
-    # Change point detection
-    model = "l2"  # "l1", "rbf", "linear", "normal", "ar"
     rpt.show.display(
         signal,
         bkps,
-        rpt.Window(width=1000, model=model).fit(signal).predict(n_bkps=1),
+        window_bkps,
         figsize=figsize,
     )
     plt.ylim(ymin, ymax)
-    plt.gca().get_lines()[0].set_color("darkorange")
+    plt.gca().get_lines()[0].set_color('darkorange')
     plt.title('Window Change Point Detection')
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_window.png')
 
-    # Change point detection
-    model = "l2"  # "l1", "rbf", "linear", "normal", "ar"
     rpt.show.display(
         signal,
         bkps,
-        rpt.Binseg(model=model).fit(signal).predict(n_bkps=1),
+        bin_bkps,
         figsize=figsize,
 
     )
     plt.ylim(ymin, ymax)
-    plt.gca().get_lines()[0].set_color("darkorange")
+    plt.gca().get_lines()[0].set_color('darkorange')
     plt.title('Binary Change Point Detection')
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Local Rank Divergence')
