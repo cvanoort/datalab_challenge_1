@@ -220,6 +220,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.ylabel('Rank Divergence')
     plt.tight_layout()
     ymin, ymax = plt.gca().get_ylim()
+    figsize = plt.gcf().get_size_inches()
     plt.savefig('../output/neighborhood_rank_divergence.png')
 
     # Change point detection
@@ -229,7 +230,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
         signal,
         bkps,
         rpt.Pelt(model="rbf").fit(signal).predict(pen=100),
-        figsize=(10, 6),
+        figsize=figsize,
     )
     plt.ylim(ymin, ymax)
     plt.gca().get_lines()[0].set_color("darkorange")
@@ -245,7 +246,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
         signal,
         bkps,
         rpt.Window(width=1000, model=model).fit(signal).predict(n_bkps=1),
-        figsize=(10, 6),
+        figsize=figsize,
     )
     plt.ylim(ymin, ymax)
     plt.gca().get_lines()[0].set_color("darkorange")
@@ -261,7 +262,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
         signal,
         bkps,
         rpt.Binseg(model=model).fit(signal).predict(n_bkps=1),
-        figsize=(10, 6),
+        figsize=figsize,
 
     )
     plt.ylim(ymin, ymax)

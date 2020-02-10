@@ -18,11 +18,15 @@ setwd("")
 
 ```{r}
 # Read county data
-county.raw <- read.table("nyt_population.csv", sep = ",", stringsAsFactors = F, 
-                         header = T)
+county.raw <- read.table(
+        "data/nyt_population.csv",
+        sep = ",",
+        stringsAsFactors = F,
+        header = T,
+)
 
 # Retrieve county and state names
-cstr <- strsplit(county.raw$county, split = "[,]")
+cstr <- strsplit(county.raw$county, split = "[,] ")
 ststr <- strsplit(county.raw$county, split = "[,]")
 
 # Coerce into vector that can be readded to data frame
@@ -31,14 +35,23 @@ county.raw$State <- unlist(lapply(ststr, '[[', 2))
 county.raw$State <- sub(".", "", county.raw$State)
 
 # Join county data with state abbreviations
-state.abbrev <- read.table("abbr-name.csv", sep = ",", header = F, stringsAsFactors = F)
+state.abbrev <- read.table(
+        "data/abbr-name.csv",
+        sep = ",",
+        header = F,
+        stringsAsFactors = F,
+)
 colnames(state.abbrev) <- c("abbrev", "State")
 
 county.join <- left_join(county.raw, state.abbrev)
 
 # Read in county geocodes and remove duplicates
-county.coords <- read.table("GeocodesCounties.csv", sep = ",", stringsAsFactors = F, 
-                            header = T)
+county.coords <- read.table(
+        "data/GeocodesCounties.csv",
+        sep = ",",
+        stringsAsFactors = F,
+        header = T,
+)
 
 
 # Need to only include distinct values for county and state, not latlong
