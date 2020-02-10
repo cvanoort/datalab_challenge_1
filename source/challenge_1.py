@@ -54,6 +54,8 @@ def load_and_process_data():
     df2.drop('County', axis=1, inplace=True)
 
     # Load the migration data set we found
+    # There are a few counties with missing data
+    # We may want to see if we can fill this in?
     df3 = pd.read_csv('../data/net_migration.csv', dtype={'FIPS': str})
 
     # Merge everything together
@@ -73,9 +75,6 @@ def load_and_process_data():
         left_index=False,
         right_index=False,
     )
-    print(df.columns)
-    print(df.head())
-    print(len(df.index))
     return df
 
 
@@ -97,11 +96,14 @@ def pair_plot(df):
     plt.close()
 
 
-def make_upshot_figure(df):
+def make_upshot_figure(df, renderer=None):
     """
     Replicates the figure from:
         https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
     """
+    if renderer is None:
+        renderer = plotly.io.renderers.default
+
     df['Quality of Life'] = pd.qcut(df['rank'], 7, labels=False)
 
     with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
@@ -148,14 +150,22 @@ def make_upshot_figure(df):
         )
     )
     plotly.offline.plot(fig, filename='../output/upshot_figure.html', auto_open=False)
-    fig.show()
+    fig.show(renderer=renderer)
 
 
-def make_modified_upshot_figure(df):
+def make_modified_upshot_figure(df, renderer=None):
     """
-    Replicates the figure from:
+    Produces a figure similar to:
         https://www.nytimes.com/2014/06/26/upshot/where-are-the-hardest-places-to-live-in-the-us.html
+
+    Design decisions:
+        - Color based on integer rank, not quantiles.
+        - Sequential rather than diverging color map.
+        -
     """
+    if renderer is None:
+        renderer = plotly.io.renderers.default
+
     with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
         counties = json.load(response)
 
@@ -169,7 +179,7 @@ def make_modified_upshot_figure(df):
         color_continuous_scale='Greens',
         range_color=[-1500, df['rank'].max()],
         labels={
-            'rank': 'Quality of Life (Rank)',
+            'rank': 'Quality of Life',
             'income': 'Median Income',
             'education': 'College Education',
             'unemployment': 'Unemployment',
@@ -193,7 +203,7 @@ def make_modified_upshot_figure(df):
         )
     )
     plotly.offline.plot(fig, filename='../output/upshot_figure_restyled.html', auto_open=False)
-    fig.show()
+    fig.show(renderer=renderer)
 
 
 def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
@@ -231,7 +241,8 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
         f'\n\tPelt Breakpoints:    {pelt_bkps[:-1]}'
         f'\n\tWindow Breakpoints:  {window_bkps[:-1]}'
         f'\n\tBinary Breakpoints:  {bin_bkps[:-1]}'
-        f'\n\tEnsemble Breakpoint: {ensemble_bkp}')
+        f'\n\tEnsemble Breakpoint: {ensemble_bkp}'
+    )
 
     plt.scatter(
         rank_df['rank'].values,
