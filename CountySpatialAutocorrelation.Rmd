@@ -1,0 +1,129 @@
+---
+title: "DataLabCounty"
+author: "Emily Beasley"
+date: "January 28, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning = F}
+knitr::opts_chunk$set(echo = TRUE, warning = F)
+
+# Load libraries and set working directory
+library(tidyverse)
+library(ape)
+library(ade4)
+
+setwd("")
+```
+
+```{r}
+# Read county data
+county.raw <- read.table("nyt_population.csv", sep = ",", stringsAsFactors = F, 
+                         header = T)
+
+# Retrieve county and state names
+cstr <- strsplit(county.raw$county, split = "[,]")
+ststr <- strsplit(county.raw$county, split = "[,]")
+
+# Coerce into vector that can be readded to data frame
+county.raw$county <- unlist(lapply(cstr, '[[', 1))
+county.raw$State <- unlist(lapply(ststr, '[[', 2))
+county.raw$State <- sub(".", "", county.raw$State)
+
+# Join county data with state abbreviations
+state.abbrev <- read.table("abbr-name.csv", sep = ",", header = F, stringsAsFactors = F)
+colnames(state.abbrev) <- c("abbrev", "State")
+
+county.join <- left_join(county.raw, state.abbrev)
+
+# Read in county geocodes and remove duplicates
+county.coords <- read.table("GeocodesCounties.csv", sep = ",", stringsAsFactors = F, 
+                            header = T)
+
+
+# Need to only include distinct values for county and state, not latlong
+county.coords %>%
+  group_by(county, state) %>%
+  select(county, state, latitude, longitude) %>%
+  distinct(county, state, .keep_all = T) %>%
+  {. ->> crds}
+
+# Merge geocodes with county data
+county <- left_join(county.join, crds, by = c("county", "abbrev"="state"))
+
+# Clean up the dataframe
+county$rank <- as.numeric(county$rank)
+county <- county[!is.na(county$rank),]
+county <- county[!is.na(county$latitude),]
+county <- county[!is.na(county$longitude),]
+county <- county[!is.na(county$popestimate2018),]
+```
+
+```{r}
+# First method for spatial autocorrelation: Moran's I
+# Create distance matrix
+dist <- dist(county[,13:14], method = 'euclidean')
+dist.inv <- 1/as.matrix(dist)
+dist.inv[is.infinite(dist.inv)] <- 0
+
+# Calculate Moran's I
+Moran.I(county$rank, dist.inv)
+
+Moran.I(county$income, dist.inv)
+```
+
+```{r}
+# Another method: Mantel test
+dist.vars <- dist(county[,4:9], method = 'euclidean')
+pop.dist <- dist(county$popestimate2018, method = 'euclidean')
+
+mantel.rtest(dist, dist.vars)
+
+mantel.rtest(pop.dist, dist.vars)
+```
+```{r}
+# Remove HI and see what happens
+county <- county[-which(county$abbrev == "HI"),]
+
+dist2 <- dist(county[,13:14], method = 'euclidean')
+dist.inv2 <- 1/as.matrix(dist2)
+dist.inv2[is.infinite(dist.inv2)] <- 0
+
+Moran.I(county$rank, dist.inv2)
+```
+
+```{r}
+# Look at variation within rank classes vs. income classes
+rank.density <- density(county$rank)
+
+rank.frame <- data.frame(x = rank.density$x, y = rank.density$y)
+rank.quantiles <- quantile(county$rank, c(0.1, 0.9))
+rank.frame$quant <- factor(findInterval(rank.frame$x, rank.quantiles))
+
+ggplot(data = rank.frame, aes (x, y))+
+  geom_line(size = 2)+
+  geom_ribbon(aes(ymin=0, ymax=y, fill=quant))+
+  scale_fill_manual(breaks = rank.frame$quantiles, 
+                    values = c("deepskyblue4", "white", "darkorange2"))+
+  labs(x = "Rank", y = "Density")+
+  theme_classic(base_size = 20)+
+  theme(axis.text.y = element_blank())
+
+# Do the same thing for income
+income.density <- density(county$income)
+income.density <- density(county$income)
+income.frame <- data.frame(x = income.density$x, y = income.density$y)
+income.quantiles <- quantile(county$income, c(0.1, 0.9))
+income.frame$quant <- factor(findInterval(income.frame$x, income.quantiles))
+
+ggplot(data = income.frame, aes (x, y))+
+  geom_line(size = 2)+
+  geom_ribbon(aes(ymin=0, ymax=y, fill=quant))+
+  scale_fill_manual(breaks = income.frame$quantiles, 
+                    values = c("darkorange2", "white", "deepskyblue4"))+
+  labs(x = "Income", y = "Density")+
+  theme_classic(base_size = 20)+
+  theme(axis.text.y = element_blank())
+```
+
+
