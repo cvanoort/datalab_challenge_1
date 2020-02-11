@@ -26,6 +26,10 @@ def main():
 
     pca_analysis(df)
 
+    cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity', 'net migration']
+    ascending = [False, False, True, True, False, True, False]
+    alt_recon_rank = reconstruct_rank(df, cols=cols, ascending=ascending, path='../output/migration_rank.png')
+
     a_rank = alt_rank(df)
 
 
@@ -99,7 +103,7 @@ def pair_plot(df):
         diag_kws={'color': sns.xkcd_rgb['denim blue']},
     )
     plt.tight_layout()
-    plt.savefig('../output/county_data_pair.png')
+    plt.savefig('../output/county_data_pair.png', dpi=600)
     plt.close()
 
 
@@ -282,12 +286,12 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     )
     plt.legend()
     plt.title('Mean Neighborhood Rank Divergence')
-    plt.xlabel('Quality of Life Rank')
+    plt.xlabel('Quality of Life Rank (Lower is better)')
     plt.ylabel('Rank Divergence')
     plt.tight_layout()
     ymin, ymax = plt.gca().get_ylim()
     figsize = plt.gcf().get_size_inches()
-    plt.savefig('../output/neighborhood_rank_divergence.png')
+    plt.savefig('../output/neighborhood_rank_divergence.png', dpi=600)
 
     # Visualize change points
     bkps = []
@@ -303,7 +307,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
-    plt.savefig('../output/rank_div_change_point_pelt.png')
+    plt.savefig('../output/rank_div_change_point_pelt.png', dpi=600)
 
     rpt.show.display(
         signal,
@@ -317,7 +321,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
-    plt.savefig('../output/rank_div_change_point_window.png')
+    plt.savefig('../output/rank_div_change_point_window.png', dpi=600)
 
     rpt.show.display(
         signal,
@@ -332,11 +336,11 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.xlabel('Quality of Life Rank')
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
-    plt.savefig('../output/rank_div_change_point_binary.png')
+    plt.savefig('../output/rank_div_change_point_binary.png', dpi=600)
     plt.close()
 
 
-def reconstruct_rank(df, cols=None, ascending=None):
+def reconstruct_rank(df, cols=None, ascending=None, path='../output/rank_reconstruction_error.png'):
     if cols is None:
         cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
     if ascending is None:
@@ -353,7 +357,7 @@ def reconstruct_rank(df, cols=None, ascending=None):
 
     sns.distplot(df.rank_error, rug=True)
     plt.title('Rank Reconstruction Error')
-    plt.savefig('../output/rank_reconstruction_error.png')
+    plt.savefig(path, dpi=600)
     plt.close()
 
     print("\n\nRank Reconstruction Error Details:")
@@ -366,7 +370,7 @@ def reconstruct_rank(df, cols=None, ascending=None):
     return df
 
 
-def alt_rank(df, cols=None, ascending=None):
+def alt_rank(df, cols=None, ascending=None, path='../output/alt_rank_deviations.png'):
     if cols is None:
         cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
     if ascending is None:
@@ -383,7 +387,7 @@ def alt_rank(df, cols=None, ascending=None):
 
     sns.distplot(alt_df.rank_change, rug=True)
     plt.title('Alternate Rank Deviation')
-    plt.savefig('../output/alt_rank_deviations.png')
+    plt.savefig(path, dpi=600)
     plt.close()
 
     print("\n\nAlternate Rank Deviation Details:")
