@@ -14,23 +14,22 @@ from sklearn.decomposition import PCA
 def main():
     df = load_and_process_data()
 
-    # pair_plot(df)
-    #
-    # make_upshot_figure(df)
-    # make_modified_upshot_figure(df)
-    #
-    # edge_list = load_edge_list()
-    # make_neighborhood_rank_divergence_plot(df, edge_list)
+    pair_plot(df)
 
-    recon_rank = reconstruct_rank(df)
+    make_upshot_figure(df)
+    make_modified_upshot_figure(df)
 
+    edge_list = load_edge_list()
+    make_neighborhood_rank_divergence_plot(df, edge_list)
+
+    reconstruct_rank(df)
+    alt_rank(df)
     pca_analysis(df)
 
-    cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity', 'net migration']
+    cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity', 'migration rate']
     ascending = [False, False, True, True, False, True, False]
-    alt_recon_rank = reconstruct_rank(df, cols=cols, ascending=ascending, path='../output/migration_rank.png')
-
-    a_rank = alt_rank(df)
+    alt_recon_df = reconstruct_rank(df, cols=cols, ascending=ascending, path='../output/migration_rank.png')
+    make_rank_div_map(alt_recon_df)
 
 
 def load_and_process_data():
@@ -219,6 +218,53 @@ def make_modified_upshot_figure(df, renderer=None, save=True):
 
     if save:
         plotly.offline.plot(fig, filename='../output/upshot_figure_restyled.html', auto_open=False)
+
+    fig.show(renderer=renderer)
+
+
+def make_rank_div_map(df, renderer=None, save=True):
+    """
+    Makes a similar plot to make_upshot_figure and make_modified_upshot_figure,
+    but the coloring is based on a rank divergence rather than the QoL indicator.
+    """
+    if renderer is None:
+        renderer = plotly.io.renderers.default
+
+    with urlopen('https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json') as response:
+        counties = json.load(response)
+
+    fig = px.choropleth(
+        df,
+        geojson=counties,
+        locations='FIPS',
+        color='rank_error',
+        hover_name='County',
+        hover_data=['rank_error', 'rank', 'rank_remake', 'income', 'education', 'unemployment', 'disability', 'life',
+                    'obesity'],
+        color_continuous_scale='RdBu',
+        range_color=[-500, 500],
+        labels={
+            'rank_error': 'Rank Divergence',
+            'rank': 'Quality of Life Rank',
+            'rank_remake': 'Alternate QoL Rank',
+            'income': 'Median Income',
+            'education': 'College Education',
+            'unemployment': 'Unemployment',
+            'disability': 'Disability',
+            'life': 'Life Expectancy',
+            'obesity': 'Obesity',
+        }
+    )
+    fig.update_geos(
+        visible=False,
+        scope='usa',
+    )
+    fig.update_layout(
+        margin={'r': 0, 't': 30, 'l': 0, 'b': 0},
+    )
+
+    if save:
+        plotly.offline.plot(fig, filename='../output/rank_divergence_map.html', auto_open=False)
 
     fig.show(renderer=renderer)
 
