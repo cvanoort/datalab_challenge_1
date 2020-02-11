@@ -13,13 +13,15 @@ import seaborn as sns
 def main():
     df = load_and_process_data()
 
-    pair_plot(df)
+    # pair_plot(df)
+    #
+    # make_upshot_figure(df)
+    # make_modified_upshot_figure(df)
+    #
+    # edge_list = load_edge_list()
+    # make_neighborhood_rank_divergence_plot(df, edge_list)
 
-    make_upshot_figure(df)
-    make_modified_upshot_figure(df)
-
-    edge_list = load_edge_list()
-    make_neighborhood_rank_divergence_plot(df, edge_list)
+    alt_rank = reconstruct_rank(df)
 
 
 def load_and_process_data():
@@ -326,6 +328,26 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_binary.png')
+
+
+def reconstruct_rank(df):
+    cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
+    ascending = [False, False, True, True, False, True]
+    ranks = []
+    for col, ascending in zip(cols, ascending):
+        ranks.append(df[col].rank(ascending=ascending, method='first'))
+
+    df['rank_remake'] = pd.Series(np.mean(ranks, axis=0)).rank(ascending=True, method='first')
+    df['rank_error'] = df['rank'] - df['rank_remake']
+    print(df['rank_error'].abs().sum())
+    print(df['rank_error'].describe())
+    print(df.loc[df.rank_error != 0, 'rank_error'].describe())
+
+    sns.distplot(df.rank_error, rug=True)
+    plt.title('Rank Reconstruction Error')
+    plt.savefig('../output/rank_reconstruction_error.png')
+
+    return df
 
 
 if __name__ == '__main__':
