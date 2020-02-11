@@ -3,4 +3,5 @@ numpy
 pandas
 plotly
 ruptures
+scikit-learn
 seaborn

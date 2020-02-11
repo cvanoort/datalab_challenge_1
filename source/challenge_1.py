@@ -8,6 +8,7 @@ import plotly
 import plotly.express as px
 import ruptures as rpt
 import seaborn as sns
+from sklearn.decomposition import PCA
 
 
 def main():
@@ -22,6 +23,8 @@ def main():
     # make_neighborhood_rank_divergence_plot(df, edge_list)
 
     alt_rank = reconstruct_rank(df)
+
+    pca_analysis(df)
 
 
 def load_and_process_data():
@@ -339,15 +342,37 @@ def reconstruct_rank(df):
 
     df['rank_remake'] = pd.Series(np.mean(ranks, axis=0)).rank(ascending=True, method='first')
     df['rank_error'] = df['rank'] - df['rank_remake']
-    print(df['rank_error'].abs().sum())
-    print(df['rank_error'].describe())
-    print(df.loc[df.rank_error != 0, 'rank_error'].describe())
 
     sns.distplot(df.rank_error, rug=True)
     plt.title('Rank Reconstruction Error')
     plt.savefig('../output/rank_reconstruction_error.png')
 
+    print("\n\nRank Reconstruction Error Details:")
+    print(f"Total Rank Deviation: {df['rank_error'].abs().sum()}")
+    print('\nRank Deviation Summary')
+    print(df['rank_error'].describe())
+    print('\nNon-Zero Rank Deviation Summary')
+    print(df.loc[df.rank_error != 0, 'rank_error'].describe())
+
     return df
+
+
+def pca_analysis(df):
+    cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
+    df = df.loc[:, cols]
+    df -= df.mean(axis=0)
+    df /= df.std(axis=0)
+
+    pca = PCA()
+    pca.fit(df)
+
+    print("\n\nPCA:")
+    print("Explained Variance Ratio by Component")
+    print(pca.explained_variance_ratio_)
+    print("\nColumns Investigated")
+    print(cols)
+    print("\nComponent Weights")
+    print(pca.components_)
 
 
 if __name__ == '__main__':
