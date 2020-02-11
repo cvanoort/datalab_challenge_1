@@ -103,7 +103,7 @@ def pair_plot(df):
     )
     plt.tight_layout()
     plt.savefig('../output/county_data_pair.png', dpi=600)
-    plt.close()
+    plt.close('all')
 
 
 def make_upshot_figure(df, renderer=None, save=True):
@@ -338,6 +338,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     ymin, ymax = plt.gca().get_ylim()
     figsize = plt.gcf().get_size_inches()
     plt.savefig('../output/neighborhood_rank_divergence.png', dpi=600)
+    plt.close('all')
 
     # Visualize change points
     bkps = []
@@ -354,6 +355,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_pelt.png', dpi=600)
+    plt.close('all')
 
     rpt.show.display(
         signal,
@@ -368,6 +370,7 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_window.png', dpi=600)
+    plt.close('all')
 
     rpt.show.display(
         signal,
@@ -383,10 +386,10 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_binary.png', dpi=600)
-    plt.close()
+    plt.close('all')
 
 
-def reconstruct_rank(df, cols=None, ascending=None, path='../output/rank_reconstruction_error.png'):
+def reconstruct_rank(df, cols=None, ascending=None, path='../output/rank_reconstruction_error.png', verbose=True):
     if cols is None:
         cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
     if ascending is None:
@@ -404,19 +407,20 @@ def reconstruct_rank(df, cols=None, ascending=None, path='../output/rank_reconst
     sns.distplot(df.rank_error, rug=True)
     plt.title('Rank Reconstruction Error')
     plt.savefig(path, dpi=600)
-    plt.close()
+    plt.close('all')
 
-    print("\n\nRank Reconstruction Error Details:")
-    print(f"Total Rank Deviation: {df['rank_error'].abs().sum()}")
-    print('\nRank Deviation Summary')
-    print(df['rank_error'].describe())
-    print('\nNon-Zero Rank Deviation Summary')
-    print(df.loc[df.rank_error != 0, 'rank_error'].describe())
+    if verbose:
+        print("\n\nRank Reconstruction Error Details:")
+        print(f"Total Rank Deviation: {df['rank_error'].abs().sum()}")
+        print('\nRank Deviation Summary')
+        print(df['rank_error'].describe())
+        print('\nNon-Zero Rank Deviation Summary')
+        print(df.loc[df.rank_error != 0, 'rank_error'].describe())
 
     return df
 
 
-def alt_rank(df, cols=None, ascending=None, path='../output/alt_rank_deviations.png'):
+def alt_rank(df, cols=None, ascending=None, path='../output/alt_rank_deviations.png', verbose=True):
     if cols is None:
         cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
     if ascending is None:
@@ -434,19 +438,20 @@ def alt_rank(df, cols=None, ascending=None, path='../output/alt_rank_deviations.
     sns.distplot(alt_df.rank_change, rug=True)
     plt.title('Alternate Rank Deviation')
     plt.savefig(path, dpi=600)
-    plt.close()
+    plt.close('all')
 
-    print("\n\nAlternate Rank Deviation Details:")
-    print(f"Total Rank Deviation: {alt_df['rank_change'].abs().sum()}")
-    print('\nRank Deviation Summary')
-    print(alt_df['rank_change'].describe())
-    print('\nNon-Zero Rank Deviation Summary')
-    print(alt_df.loc[alt_df.rank_change != 0, 'rank_change'].describe())
+    if verbose:
+        print("\n\nAlternate Rank Deviation Details:")
+        print(f"Total Rank Deviation: {alt_df['rank_change'].abs().sum()}")
+        print('\nRank Deviation Summary')
+        print(alt_df['rank_change'].describe())
+        print('\nNon-Zero Rank Deviation Summary')
+        print(alt_df.loc[alt_df.rank_change != 0, 'rank_change'].describe())
 
     return alt_df
 
 
-def pca_analysis(df):
+def pca_analysis(df, verbose=True):
     cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
     df = df.loc[:, cols]
     df -= df.mean(axis=0)
@@ -455,13 +460,16 @@ def pca_analysis(df):
     pca = PCA()
     pca.fit(df)
 
-    print("\n\nPCA:")
-    print("Explained Variance Ratio by Component")
-    print(pca.explained_variance_ratio_)
-    print("\nColumns Investigated")
-    print(cols)
-    print("\nComponent Weights")
-    print(pca.components_)
+    if verbose:
+        print("\n\nPCA:")
+        print("Explained Variance Ratio by Component")
+        print(pca.explained_variance_ratio_)
+        print("\nColumns Investigated")
+        print(cols)
+        print("\nComponent Weights")
+        print(pca.components_)
+
+    return pca
 
 
 if __name__ == '__main__':
