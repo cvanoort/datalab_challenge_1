@@ -22,9 +22,11 @@ def main():
     # edge_list = load_edge_list()
     # make_neighborhood_rank_divergence_plot(df, edge_list)
 
-    alt_rank = reconstruct_rank(df)
+    recon_rank = reconstruct_rank(df)
 
     pca_analysis(df)
+
+    a_rank = alt_rank(df)
 
 
 def load_and_process_data():
@@ -331,14 +333,20 @@ def make_neighborhood_rank_divergence_plot(rank_df, adj_df):
     plt.ylabel('Local Rank Divergence')
     plt.tight_layout()
     plt.savefig('../output/rank_div_change_point_binary.png')
+    plt.close()
 
 
-def reconstruct_rank(df):
-    cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
-    ascending = [False, False, True, True, False, True]
+def reconstruct_rank(df, cols=None, ascending=None):
+    if cols is None:
+        cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
+    if ascending is None:
+        ascending = [False, False, True, True, False, True]
+
+    assert len(cols) == len(ascending)
+
     ranks = []
-    for col, ascending in zip(cols, ascending):
-        ranks.append(df[col].rank(ascending=ascending, method='first'))
+    for col, ascend in zip(cols, ascending):
+        ranks.append(df[col].rank(ascending=ascend, method='first'))
 
     df['rank_remake'] = pd.Series(np.mean(ranks, axis=0)).rank(ascending=True, method='first')
     df['rank_error'] = df['rank'] - df['rank_remake']
@@ -346,6 +354,7 @@ def reconstruct_rank(df):
     sns.distplot(df.rank_error, rug=True)
     plt.title('Rank Reconstruction Error')
     plt.savefig('../output/rank_reconstruction_error.png')
+    plt.close()
 
     print("\n\nRank Reconstruction Error Details:")
     print(f"Total Rank Deviation: {df['rank_error'].abs().sum()}")
@@ -355,6 +364,36 @@ def reconstruct_rank(df):
     print(df.loc[df.rank_error != 0, 'rank_error'].describe())
 
     return df
+
+
+def alt_rank(df, cols=None, ascending=None):
+    if cols is None:
+        cols = ['education', 'income', 'unemployment', 'disability', 'life', 'obesity']
+    if ascending is None:
+        ascending = [False, False, True, True, False, True]
+
+    assert len(cols) == len(ascending)
+
+    alt_df = df.loc[:, cols]
+    alt_df -= df.mean(axis=0)
+    alt_df /= df.std(axis=0)
+    alt_df *= np.array([1 if not x else -1 for x in ascending])
+    alt_df['alt_rank'] = alt_df.mean(axis=1).rank(ascending=False, method='dense')
+    alt_df['rank_change'] = df['rank'] - alt_df['alt_rank']
+
+    sns.distplot(alt_df.rank_change, rug=True)
+    plt.title('Alternate Rank Deviation')
+    plt.savefig('../output/alt_rank_deviations.png')
+    plt.close()
+
+    print("\n\nAlternate Rank Deviation Details:")
+    print(f"Total Rank Deviation: {alt_df['rank_change'].abs().sum()}")
+    print('\nRank Deviation Summary')
+    print(alt_df['rank_change'].describe())
+    print('\nNon-Zero Rank Deviation Summary')
+    print(alt_df.loc[alt_df.rank_change != 0, 'rank_change'].describe())
+
+    return alt_df
 
 
 def pca_analysis(df):
